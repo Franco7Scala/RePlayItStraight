@@ -12,7 +12,7 @@ def CIFAR10(args):
 
     train_transform = T.Compose([T.RandomHorizontalFlip(), T.RandomCrop(size=32, padding=4), T.ToTensor(), T.Normalize(mean=mean, std=std)])
     test_transform = T.Compose([T.ToTensor(), T.Normalize(mean=mean, std=std)])
-    dst_train = datasets.CIFAR10(args.data_path+'/cifar10', train=True, download=False, transform=train_transform)
+    dst_train = datasets.CIFAR10(args.data_path+'/cifar10', train=True, download=True, transform=train_transform)
     dst_unlabeled = datasets.CIFAR10(args.data_path+'/cifar10', train=True, download=False, transform=test_transform)
     dst_test = datasets.CIFAR10(args.data_path+'/cifar10', train=False, download=False, transform=test_transform)
     class_names = dst_train.classes
