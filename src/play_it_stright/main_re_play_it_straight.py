@@ -36,10 +36,6 @@ def rs2_training(dst_train, args, network, train_loader, test_loader, boot_epoch
             _, backward_steps = train(split, network, criterion, optimizer, scheduler, epoch, args, rec, if_weighted=False)
             tot_backward_steps += backward_steps
             epoch += 1
-            # if epoch >= boot_epochs:
-            #     accuracy, precision, recall, f1 = test(test_loader, network, criterion, epoch, args, rec)
-            #     clprint(f"{type} epoch {epoch}/{boot_epochs} | Accuracy: {accuracy}, Precision: {precision}, Recall: {recall}, F1: {f1}", reason=Reason.OUTPUT_TRAINING)
-            #     return accuracy, precision, recall, f1, tot_backward_steps
 
             if epoch % 10 == 0:
                 accuracy, precision, recall, f1 = test(test_loader, network, criterion, epoch, args, rec)
@@ -103,9 +99,6 @@ if __name__ == "__main__":
     macs, params = get_model_complexity_info(network, (channel, im_size[0], im_size[1]), as_strings=True, print_per_layer_stat=False, verbose=False)
     print("{:<30}  {:<8}".format("MACs: ", macs))
     print("{:<30}  {:<8}".format("Number of parameters: ", params))
-    # Tracker for energy consumption calculation 
-    #tracker = EmissionsTracker()
-    #tracker.start()
     # RS2 boot training
     print("==================== RS2 boot training ====================")
     print("RS2 split size: {}".format(int(len(dst_train) / args.n_split)))
@@ -141,7 +134,7 @@ if __name__ == "__main__":
 
         clprint("Run: # of Labeled: {}, # of new Labeled: {}, # of Unlabeled: {}".format(len(labeled_set), len(new_labeled_set), len(unlabeled_set)), Reason.SETUP_TRAINING)
         print("==========Start Training==========")
-        if len(labeled_set) >= 30000:
+        if len(labeled_set) >= 25000:
             clprint("Performing an optimized run due to the excessively large size of the labeled dataset...", Reason.INFO_TRAINING)
             # Updating scheduler according to RS2
             if len(labeled_set) == 0:
@@ -245,4 +238,3 @@ if __name__ == "__main__":
     logs_f1 = np.array(logs_f1).reshape((-1, 1))
     print(logs_f1, flush=True)
 
-    #tracker.stop()

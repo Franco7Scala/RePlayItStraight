@@ -1,8 +1,8 @@
-# Re-Play it Straight: An Intelligent Data Pruning Technique for Green-AI
+# An Efficient Model Training framework for GreenAI
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repository contains the code and resources for the research paper "Re-Play it Straight: An Intelligent Data Pruning Technique for Green-AI". Our proposed "Re-Play It Straight" algorithm aims to reduce the computational and environmental costs of training AI models by strategically pruning the training dataset without compromising performance.
+This repository contains the code and resources for the algorithm "Re-Play it Straight" presented in the research paper "An Efficient Model Training framework for GreenAI". Our proposal aims to reduce the computational and environmental costs of training AI models by strategically pruning the training dataset without compromising performance.
 
 ## Key Features
 
