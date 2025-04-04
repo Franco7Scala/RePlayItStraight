@@ -7,7 +7,7 @@ This repository contains the code and resources for the research paper "Re-Play 
 ## Key Features
 
 * **Green-AI Focus:** Employs intelligent data pruning to minimize the environmental footprint of AI model training;
-* **Play It Straight Algorithm:** Introduces a novel algorithm combining active learning (AL) and repeated random sampling for effective dataset reduction;
+* **Re-Play It Straight Algorithm:** Introduces a novel algorithm combining active learning (AL) and repeated random sampling for effective dataset reduction;
 * **Comparative Implementations:** Provides scripts for training models with the whole dataset, a pure AL approach, repeated random sampling, and the proposed "Re-Play It Straight" algorithm;
 * **Reproducibility:** Facilitates replication of our research results.
 
