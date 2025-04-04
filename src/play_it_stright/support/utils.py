@@ -29,6 +29,7 @@ def train(train_loader, network, criterion, optimizer, scheduler, epoch, args, r
     top1 = AverageMeter('Acc@1', ':6.2f')
     network.train()
     end = time.time()
+    backward_steps = 0
     for i, contents in enumerate(train_loader):
         optimizer.zero_grad()
         if if_weighted:
@@ -54,11 +55,13 @@ def train(train_loader, network, criterion, optimizer, scheduler, epoch, args, r
         loss.backward()
         optimizer.step()
         scheduler.step()
+        backward_steps += 1
         # Measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
 
     record_train_stats(rec, epoch, losses.avg, top1.avg, optimizer.state_dict()['param_groups'][0]['lr'])
+    return losses.avg, backward_steps
 
 
 def test(test_loader, network, criterion, epoch, args, rec):

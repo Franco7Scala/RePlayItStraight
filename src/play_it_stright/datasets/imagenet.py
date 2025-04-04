@@ -3,7 +3,16 @@ import torchvision.transforms as T
 from torch.utils.data import Dataset, DataLoader
 from torchvision.datasets import ImageFolder
 from torch import tensor, long
+from PIL import Image
 
+
+def checkImage(path):
+    try:
+        im = Image.open(path)
+        return True
+    except:
+        return False
+    pass
 
 class MyImageNet(Dataset):
     def __init__(self, file_path, transform=None, resolution=224):
@@ -14,7 +23,7 @@ class MyImageNet(Dataset):
         else:
             print("Resizing Initial Data into {}x{}".format(self.resolution, self.resolution))
             transform_resize = T.Resize(size=(self.resolution,self.resolution)) #reduce the resolution once at an initial point
-            self.data = ImageFolder(file_path, transform_resize)
+            self.data = ImageFolder(file_path, transform_resize, is_valid_file=checkImage)
 
         self.classes = self.data.classes
         self.targets = self.data.targets
@@ -56,10 +65,11 @@ def ImageNet(args):
         train_transform, test_transform = get_augmentations_224(T_normalize)
 
     dst_train = MyImageNet(args.data_path+'/imagenet/train/', transform=train_transform, resolution=args.resolution)
+    dst_unlabeled = MyImageNet(args.data_path+'/imagenet/train/', transform=test_transform, resolution=args.resolution)
     dst_test = MyImageNet(args.data_path+'/imagenet/val/', transform=test_transform, resolution=args.resolution)
 
 
     class_names = dst_train.classes
     dst_train.targets = tensor(dst_train.targets, dtype=long)
     dst_test.targets = tensor(dst_test.targets, dtype=long)
-    return channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test
+    return channel, im_size, num_classes, class_names, mean, std, dst_train, dst_unlabeled, dst_test

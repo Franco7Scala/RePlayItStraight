@@ -8,7 +8,9 @@ parser = argparse.ArgumentParser(description='Parameter Processing')
 # Pro arguments
 parser.add_argument('--n_split', type=int, default=10, help='n splits for RS2')
 parser.add_argument('--boot_epochs', type=int, default=50, help='n epochs for boot with RS2')
-parser.add_argument('--target_accuracy', type=int, default=95, help='The target accuracy of the model')
+parser.add_argument('--target_accuracy', type=float, default=90, help='The target accuracy of the model')
+parser.add_argument('--discount_rs2', type=float, default=2, help='The selection selection division factor of RS2')
+parser.add_argument('--boost_threshold', type=float, default=0.07, help='The boost threshold')
 
 # Basic arguments
 parser.add_argument('--dataset', type=str, default='CIFAR10', help='dataset')

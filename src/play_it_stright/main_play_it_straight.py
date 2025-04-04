@@ -49,13 +49,14 @@ if __name__ == "__main__":
         test_loader = torch.utils.data.DataLoader(dst_test, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
 
     print("| Training on model %s" % args.model)
+    tot_backward_steps = 0
     network = get_model(args, nets, args.model)
     macs, params = get_model_complexity_info(network, (channel, im_size[0], im_size[1]), as_strings=True, print_per_layer_stat=False, verbose=False)
     print("{:<30}  {:<8}".format("MACs: ", macs))
     print("{:<30}  {:<8}".format("Number of parameters: ", params))
     # Tracker for energy consumption calculation 
-    tracker = EmissionsTracker()
-    tracker.start()
+    #tracker = EmissionsTracker()
+    #tracker.start()
     # RS2 boot training
     print("==================== RS2 boot training ====================")
     print("RS2 split size: {}".format(int(len(dst_train) / args.n_split)))
@@ -70,7 +71,8 @@ if __name__ == "__main__":
     while epoch < args.boot_epochs:
         for split in splits_for_rs2:
             print("performing RS2 boot epoch n.{}/{}".format(epoch + 1, args.boot_epochs))
-            train(split, network, criterion, optimizer, scheduler, epoch, args, rec, if_weighted=False)
+            _, backward_steps = train(split, network, criterion, optimizer, scheduler, epoch, args, rec, if_weighted=False)
+            tot_backward_steps += backward_steps
             epoch += 1
             if epoch % 10 == 0:
                 accuracy, precision, recall, f1 = test(test_loader, network, criterion, epoch, args, rec)
@@ -131,10 +133,12 @@ if __name__ == "__main__":
         criterion, optimizer, scheduler, rec = get_optim_configurations(args, network, train_loader)
         print("==========Start Training==========")
         for epoch in range(args.epochs):
-            train(train_loader, network, criterion, optimizer, scheduler, epoch, args, rec, if_weighted=False)
+            _, backward_steps = train(train_loader, network, criterion, optimizer, scheduler, epoch, args, rec, if_weighted=False)
+            tot_backward_steps += backward_steps
 
         accuracy, precision, recall, f1 = test(test_loader, network, criterion, epoch, args, rec)
         clprint("Cycle {} || Label set size {} | Accuracy: {}, Precision: {}, Recall: {}, F1: {}".format(cycle, len(labeled_set), accuracy, precision, recall, f1), reason=Reason.OUTPUT_TRAINING)
+        clprint(f"Done {tot_backward_steps} backward steps to reach {accuracy} of accuracy!", reason=Reason.OUTPUT_TRAINING)
 
         logs_accuracy.append([accuracy])
         logs_precision.append([precision])
@@ -143,6 +147,8 @@ if __name__ == "__main__":
 
     print("========== Final logs ==========")
     print("-"*100)
+    print("Backward steps:")
+    print(tot_backward_steps, flush=True)
     print("Accuracies:")
     logs_accuracy = np.array(logs_accuracy).reshape((-1, 1))
     print(logs_accuracy, flush=True)
@@ -156,4 +162,4 @@ if __name__ == "__main__":
     logs_f1 = np.array(logs_f1).reshape((-1, 1))
     print(logs_f1, flush=True)
 
-    tracker.stop()
+    #tracker.stop()

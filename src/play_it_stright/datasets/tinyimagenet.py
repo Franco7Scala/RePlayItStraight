@@ -4,7 +4,8 @@ import requests
 import zipfile
 
 
-def TinyImageNet(data_path, downsize=True):
+def TinyImageNet(args, downsize=False):
+    data_path = args.data_path
     if not os.path.exists(os.path.join(data_path, "tiny-imagenet-200")):
         url = "http://cs231n.stanford.edu/tiny-imagenet-200.zip"  # 248MB
         print("Downloading Tiny-ImageNet")
@@ -29,7 +30,8 @@ def TinyImageNet(data_path, downsize=True):
         transform = transforms.Compose([transforms.Resize(32), transform])
 
     dst_train = datasets.ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=transform)
+    dst_unlabeled = datasets.ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/train'), transform=transform)
     dst_test = datasets.ImageFolder(root=os.path.join(data_path, 'tiny-imagenet-200/test'), transform=transform)
 
     class_names = dst_train.classes
-    return channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test
+    return channel, im_size, num_classes, class_names, mean, std, dst_train, dst_unlabeled, dst_test
