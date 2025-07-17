@@ -1,12 +1,14 @@
 import time
 import os
+import random
+import numpy
 import torch
 import torch.nn as nn
 
 from argparse import ArgumentTypeError
 from prefetch_generator import BackgroundGenerator
 from sklearn.metrics import precision_score, recall_score, f1_score
-from src.play_it_stright.support.support import clprint, Reason
+from src.re_play_it_straight.support.support import clprint, Reason
 
 
 class WeightedSubset(torch.utils.data.Subset):
@@ -326,3 +328,10 @@ def get_optim_configurations(args, network, train_loader, start_epoch=0):
     rec = init_recorder()
 
     return criterion, optimizer, scheduler, rec
+
+
+def seed_everything(seed=0):
+    torch.random.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    numpy.random.seed(seed)
+    random.seed(seed)

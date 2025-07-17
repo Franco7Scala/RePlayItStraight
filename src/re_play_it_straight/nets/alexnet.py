@@ -96,5 +96,5 @@ def AlexNet(channel: int, num_classes: int, im_size, record_embedding: bool = Fa
         net = AlexNet_32x32(channel=channel, num_classes=num_classes, record_embedding=record_embedding,
                             no_grad=no_grad)
     else:
-        raise NotImplementedError("Network Architecture for current dataset has not been implemented.")
+        raise NotImplementedError("Network Architecture for current datasets_ has not been implemented.")
     return net

@@ -152,7 +152,7 @@ def WideResNet(arch: str, channel: int, num_classes: int, im_size, record_embedd
         else:
             raise ValueError("Model architecture not found.")
     else:
-        raise NotImplementedError("Network Architecture for current dataset has not been implemented.")
+        raise NotImplementedError("Network Architecture for current datasets_ has not been implemented.")
     return net
 
 

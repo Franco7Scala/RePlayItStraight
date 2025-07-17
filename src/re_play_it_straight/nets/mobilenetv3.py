@@ -222,7 +222,7 @@ def MobileNetV3(arch: str, channel: int, num_classes: int, im_size, record_embed
     arch = arch.lower()
     if pretrained:
         if channel != 3:
-            raise NotImplementedError("Network Architecture for current dataset has not been implemented.")
+            raise NotImplementedError("Network Architecture for current datasets_ has not been implemented.")
 
         inverted_residual_setting, last_channel = mobilenetv3._mobilenet_v3_conf(arch)
         net = MobileNetV3_224x224(inverted_residual_setting=inverted_residual_setting, last_channel=last_channel,
@@ -239,7 +239,7 @@ def MobileNetV3(arch: str, channel: int, num_classes: int, im_size, record_embed
 
     elif im_size[0] == 224 and im_size[1] == 224:
         if channel != 3:
-            raise NotImplementedError("Network Architecture for current dataset has not been implemented.")
+            raise NotImplementedError("Network Architecture for current datasets_ has not been implemented.")
         inverted_residual_setting, last_channel = mobilenetv3._mobilenet_v3_conf(arch)
         net = MobileNetV3_224x224(inverted_residual_setting=inverted_residual_setting, last_channel=last_channel,
                                   channel=channel, num_classes=num_classes, record_embedding=record_embedding,
@@ -288,7 +288,7 @@ def MobileNetV3(arch: str, channel: int, num_classes: int, im_size, record_embed
         else:
             raise ValueError("Model architecture not found.")
     else:
-        raise NotImplementedError("Network Architecture for current dataset has not been implemented.")
+        raise NotImplementedError("Network Architecture for current datasets_ has not been implemented.")
     return net
 
 

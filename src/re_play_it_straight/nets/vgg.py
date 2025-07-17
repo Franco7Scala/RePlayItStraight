@@ -104,7 +104,7 @@ def VGG(arch: str, channel: int, num_classes: int, im_size, record_embedding: bo
             channel == 3 and im_size[0] == 32 and im_size[1] == 32):
         net = VGG_32x32(arch, channel, num_classes=num_classes, record_embedding=record_embedding, no_grad=no_grad)
     else:
-        raise NotImplementedError("Network Architecture for current dataset has not been implemented.")
+        raise NotImplementedError("Network Architecture for current datasets_ has not been implemented.")
     return net
 
 

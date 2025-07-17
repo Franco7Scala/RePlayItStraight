@@ -13,15 +13,15 @@ parser.add_argument('--discount_rs2', type=float, default=2, help='The selection
 parser.add_argument('--boost_threshold', type=float, default=0.07, help='The boost threshold')
 
 # Basic arguments
-parser.add_argument('--dataset', type=str, default='CIFAR10', help='dataset')
+parser.add_argument('--dataset', type=str, default='CIFAR10', help='dataset\'s name')
 parser.add_argument('--n-class', type=int, default=10, help='# of classes')
-parser.add_argument('--cycle', type=int, default=10, help='# of play_it_stright cycles')
+parser.add_argument('--cycle', type=int, default=10, help='# of re_play_it_straight cycles')
 parser.add_argument('--n-query', type=int, default=1000, help='# of query samples')
 parser.add_argument('--subset', type=int, default=50000, help='subset')
 parser.add_argument('--resolution', type=int, default=32, help='resolution') # 32
 parser.add_argument('--model', type=str, default='ResNet18', help='model')
 parser.add_argument('--epochs', default=200, type=int, help='number of total epochs to run')
-parser.add_argument('--data_path', type=str, default='../data', help='dataset path')
+parser.add_argument('--data_path', type=str, default='../data', help='datasets_ path')
 parser.add_argument('--gpu', default=None, nargs="+", type=int, help='GPU id to use')
 parser.add_argument('--print_freq', '-p', default=300, type=int, help='print frequency (default: 20)')
 parser.add_argument('--seed', default=0, type=int, help="random seed")
@@ -44,13 +44,13 @@ parser.add_argument("--test-batch-size", "-tb", default=500, type=int, help="bat
 
 # Testing
 parser.add_argument("--test_interval", '-ti', default=1, type=int, help="the number of training epochs to be preformed between two test epochs; a value of 0 means no test will be run (default: 1)")
-parser.add_argument("--test_fraction", '-tf', type=float, default=1., help="proportion of test dataset used for evaluating the model (default: 1.)")
+parser.add_argument("--test_fraction", '-tf', type=float, default=1., help="proportion of test datasets_ used for evaluating the model (default: 1.)")
 
 # Selecting
 parser.add_argument('--balance', default=False, type=str_to_bool, help="whether balance selection is performed per class")
 
 # Algorithm
-parser.add_argument('--method', default="Uncertainty", help="specifiy play_it_stright method to use") #Uncertainty, kCenterGreedy, GTknownUncertainty
+parser.add_argument('--method', default="Uncertainty", help="specifiy re_play_it_straight method to use") #Uncertainty, kCenterGreedy, GTknownUncertainty
 parser.add_argument('--submodular', default="GraphCut", help="specifiy submodular function to use")
 parser.add_argument('--submodular_greedy', default="LazyGreedy", help="specifiy greedy algorithm for submodular optimization")
 parser.add_argument('--uncertainty', default="Margin", help="specifiy uncertanty score to use") #Margin, LeastConfidence, Entropy, Loss

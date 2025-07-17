@@ -1,23 +1,20 @@
 import random
 import nets
+import copy
 import torch
-import datasets as datasets
-import methods as methods
+import torchtune
+import datasets_
+import methods
 import numpy as np
 import torch.optim as optim
 
 from torch.utils.data import DataLoader
 from codecarbon import EmissionsTracker
-from src.play_it_stright.support.support import clprint, Reason
-from src.play_it_stright.support.rs2 import split_dataset_for_rs2, rs2_split_dataset
-from src.play_it_stright.support.utils import *
-from src.play_it_stright.support.arguments import parser
+from src.re_play_it_straight.support.support import clprint, Reason
+from src.re_play_it_straight.support.rs2 import split_dataset_for_rs2, rs2_split_dataset
+from src.re_play_it_straight.support.utils import *
+from src.re_play_it_straight.support.arguments import parser
 from ptflops import get_model_complexity_info
-
-
-random.seed(0)
-torch.manual_seed(0)
-torch.backends.cudnn.deterministic = True
 
 
 def rs2_training(dst_train, args, network, train_loader, test_loader, boot_epochs, n_split, type="boot", check_accuracy=False):
@@ -65,34 +62,7 @@ def rs2_training(dst_train, args, network, train_loader, test_loader, boot_epoch
     return accuracy, precision, recall, f1, tot_backward_steps
 
 
-if __name__ == "__main__":
-    args = parser.parse_args()
-    cuda = ""
-    if len(args.gpu) > 1:
-        cuda = "cuda"
-
-    elif len(args.gpu) == 1:
-        cuda = "cuda:"+str(args.gpu[0])
-
-    if args.dataset == "ImageNet":
-        args.device = cuda if torch.cuda.is_available() else "cpu"
-
-    else:
-        args.device = cuda if torch.cuda.is_available() else "cpu"
-
-    print("args: ", args)
-    channel, im_size, num_classes, class_names, mean, std, dst_train, dst_u_all, dst_test = datasets.__dict__[args.dataset](args)
-    args.channel, args.im_size, args.num_classes, args.class_names = channel, im_size, num_classes, class_names
-    print("im_size: ", dst_train[0][0].shape)
-    # BackgroundGenerator for ImageNet to speed up dataloaders
-    if args.dataset == "ImageNet" or args.dataset == "ImageNet30":
-        train_loader = DataLoaderX(dst_train, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=False)
-        test_loader = DataLoaderX(dst_test, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
-
-    else:
-        train_loader = torch.utils.data.DataLoader(dst_train, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=False)
-        test_loader = torch.utils.data.DataLoader(dst_test, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
-
+def run_experiment(train_loader, validation_loader, evaluation_loader, args):
     print("| Training on model %s" % args.model)
     tot_backward_steps = 0
     network = get_model(args, nets, args.model)
@@ -102,9 +72,8 @@ if __name__ == "__main__":
     # RS2 boot training
     print("==================== RS2 boot training ====================")
     print("RS2 split size: {}".format(int(len(dst_train) / args.n_split)))
-    accuracy, precision, recall, f1, steps = rs2_training(dst_train, args, network, train_loader, test_loader, args.boot_epochs, args.n_split)
+    accuracy, precision, recall, f1, steps = rs2_training(dst_train, args, network, train_loader, validation_loader, args.boot_epochs, args.n_split)
     tot_backward_steps += steps
-
     # Active learning cycles
     # Initialize Unlabeled Set & Labeled Set
     indices = list(range(len(dst_train)))
@@ -120,6 +89,7 @@ if __name__ == "__main__":
     current_loss = None
     previous_loss = None
     n_rs2_refresh = 0
+    
     while accuracy < args.target_accuracy:
         cycle += 1
         print("====================Cycle: {}====================".format(cycle))
@@ -127,7 +97,7 @@ if __name__ == "__main__":
         selection_args = dict(selection_method=args.uncertainty, balance=args.balance, greedy=args.submodular_greedy, function=args.submodular)
         ALmethod = methods.__dict__[args.method](dst_u_all, unlabeled_set, network, args, **selection_args)
         Q_indices, Q_scores = ALmethod.select()
-        # Update the labeled dataset and the unlabeled dataset, respectively
+        # Update the labeled datasets_ and the unlabeled datasets_, respectively
         for idx in Q_indices:
             new_labeled_set.append(idx)
             unlabeled_set.remove(idx)
@@ -135,7 +105,7 @@ if __name__ == "__main__":
         clprint("Run: # of Labeled: {}, # of new Labeled: {}, # of Unlabeled: {}".format(len(labeled_set), len(new_labeled_set), len(unlabeled_set)), Reason.SETUP_TRAINING)
         print("==========Start Training==========")
         if len(labeled_set) >= 25000:
-            clprint("Performing an optimized run due to the excessively large size of the labeled dataset...", Reason.INFO_TRAINING)
+            clprint("Performing an optimized run due to the excessively large size of the labeled datasets_...", Reason.INFO_TRAINING)
             # Updating scheduler according to RS2
             if len(labeled_set) == 0:
                 n_split = 1
@@ -193,7 +163,7 @@ if __name__ == "__main__":
 
         labeled_set += new_labeled_set
         new_labeled_set = []
-        # Performing RS2 training on the whole dataset if it is slowing training
+        # Performing RS2 training on the whole datasets_ if it is slowing training
         if previous_loss is not None:
             relative_change = abs(previous_loss - current_loss) / previous_loss
 
@@ -204,13 +174,13 @@ if __name__ == "__main__":
             clprint(f"Performing n {n_rs2_refresh} boost epoch...", reason=Reason.INFO_TRAINING)
             bkp_lr = args.lr
             args.lr = args.lr * 0.1
-            accuracy, precision, recall, f1, steps = rs2_training(dst_train, args, network, train_loader, test_loader, 10, 10, "boost", check_accuracy=True)
+            accuracy, precision, recall, f1, steps = rs2_training(dst_train, args, network, train_loader, validation_loader, 10, 10, "boost", check_accuracy=True)
             args.lr = bkp_lr
             tot_backward_steps += steps
             n_rs2_refresh += 1
 
         else:
-            accuracy, precision, recall, f1 = test(test_loader, network, criterion, epoch, args, rec)
+            accuracy, precision, recall, f1 = test(validation_loader, network, criterion, epoch, args, rec)
 
         previous_loss = current_loss
         clprint(f"Cycle {cycle} || Label set size {len(labeled_set)} | Accuracy: {accuracy}, Precision: {precision}, Recall: {recall}, F1: {f1}", reason=Reason.OUTPUT_TRAINING)
@@ -221,8 +191,8 @@ if __name__ == "__main__":
         logs_recall.append([recall])
         logs_f1.append([f1])
 
-    print("========== Final logs ==========")
-    print("-"*100)
+    print("========== Pre-Final logs ==========")
+    print("-" * 100)
     print("Backward steps:")
     print(tot_backward_steps, flush=True)
     print("Accuracies:")
@@ -237,4 +207,62 @@ if __name__ == "__main__":
     print("F1s:")
     logs_f1 = np.array(logs_f1).reshape((-1, 1))
     print(logs_f1, flush=True)
+    accuracy, precision, recall, f1 = test(evaluation_loader, network, criterion, epoch, args, rec)
 
+    print("========== Final logs ==========")
+    print("-" * 100)
+    print("Backward steps:")
+    print(tot_backward_steps, flush=True)
+    print("Accuracy:")
+    print(accuracy, flush=True)
+    print("Precision:")
+    print(precision, flush=True)
+    print("Recall:")
+    print(recall, flush=True)
+    print("F1:")
+    print(f1, flush=True)
+
+
+if __name__ == "__main__":
+    args = parser.parse_args()
+    cuda = ""
+    if len(args.gpu) > 1:
+        cuda = "cuda"
+
+    elif len(args.gpu) == 1:
+        cuda = "cuda:"+str(args.gpu[0])
+
+    if args.dataset == "ImageNet":
+        args.device = cuda if torch.cuda.is_available() else "cpu"
+
+    else:
+        args.device = cuda if torch.cuda.is_available() else "cpu"
+
+    print("args: ", args)
+    seed_everything(args.seed)
+    channel, im_size, num_classes, class_names, mean, std, dst_train, dst_u_all, dst_test = datasets_.__dict__[args.dataset](args)
+    args.channel, args.im_size, args.num_classes, args.class_names = channel, im_size, num_classes, class_names
+    print("im_size: ", dst_train[0][0].shape)
+    portions = 5
+    whole_size = int(len(dst_train)/portions)
+    lengths = [whole_size for _ in range(portions)]
+    subsets = torch.utils.data.random_split(dst_train, lengths)
+
+    for test_index in range(portions):
+        train_subsets = copy.deepcopy(subsets)
+        train_subsets.pop(test_index)
+        train_dataset = torchtune.datasets.ConcatDataset(train_subsets)
+        train_lengths = [int(len(train_dataset) * 0.75), int(len(train_dataset) * 0.05), int(len(train_dataset) * 0.20)]
+        subset_train, subset_validation, subset_test = torch.utils.data.random_split(train_dataset, train_lengths)
+
+        if args.dataset == "ImageNet" or args.dataset == "ImageNet30":
+            train_loader = DataLoaderX(subset_train, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=False)
+            validation_loader = DataLoaderX(subset_validation, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
+            evaluation_loader = DataLoaderX(subset_test, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
+
+        else:
+            train_loader = torch.utils.data.DataLoader(subset_train, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=False)
+            validation_loader = torch.utils.data.DataLoader(subset_validation, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
+            evaluation_loader = torch.utils.data.DataLoader(subset_test, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
+
+        run_experiment(train_loader, validation_loader, evaluation_loader, args)
