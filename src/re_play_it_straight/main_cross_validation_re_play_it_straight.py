@@ -127,7 +127,6 @@ def run_experiment(train_loader, validation_loader, evaluation_loader, args):
             criterion, optimizer, scheduler, rec = get_optim_configurations(args, network, train_loader)
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, t_max, eta_min=args.min_lr)
             splitted_old_labeled_set = rs2_split_dataset(dst_train=dst_train, indices=labeled_set, n_split=n_split)
-            first = True
             for epoch in range(args.epochs):
                 # taking a different chunk for each epoch from old datas
                 if len(splitted_old_labeled_set) > 0:
@@ -209,18 +208,18 @@ def run_experiment(train_loader, validation_loader, evaluation_loader, args):
     print(logs_f1, flush=True)
     accuracy, precision, recall, f1 = test(evaluation_loader, network, criterion, epoch, args, rec)
 
-    print("========== Final logs ==========")
-    print("-" * 100)
-    print("Backward steps:")
-    print(tot_backward_steps, flush=True)
-    print("Accuracy:")
-    print(accuracy, flush=True)
-    print("Precision:")
-    print(precision, flush=True)
-    print("Recall:")
-    print(recall, flush=True)
-    print("F1:")
-    print(f1, flush=True)
+    clprint("========== Final logs ==========", Reason.OUTPUT_TRAINING)
+    clprint("-" * 100, Reason.OUTPUT_TRAINING)
+    clprint("Backward steps:", Reason.OUTPUT_TRAINING)
+    clprint(tot_backward_steps, Reason.OUTPUT_TRAINING)
+    clprint("Accuracy:", Reason.OUTPUT_TRAINING)
+    clprint(accuracy, Reason.OUTPUT_TRAINING)
+    clprint("Precision:", Reason.OUTPUT_TRAINING)
+    clprint(precision, Reason.OUTPUT_TRAINING)
+    clprint("Recall:", Reason.OUTPUT_TRAINING)
+    clprint(recall, Reason.OUTPUT_TRAINING)
+    clprint("F1:", Reason.OUTPUT_TRAINING)
+    clprint(f1, Reason.OUTPUT_TRAINING)
 
 
 if __name__ == "__main__":
