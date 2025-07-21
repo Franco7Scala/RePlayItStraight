@@ -81,7 +81,9 @@ if __name__ == "__main__":
     args.channel, args.im_size, args.num_classes, args.class_names = channel, im_size, num_classes, class_names
     print("im_size: ", dst_train[0][0].shape)
     # BackgroundGenerator for ImageNet to speed up dataloaders
-    train_lengths = [int(len(dst_train) * 0.80), int(len(dst_train) * 0.20)]
+    train_size = int(len(dst_train) * 0.80)
+    validation_size = len(dst_train) - train_size
+    train_lengths = [train_size, validation_size]
     subset_train, subset_validation = torch.utils.data.random_split(dst_train, train_lengths)
 
     if args.dataset == "ImageNet" or args.dataset == "ImageNet30":
