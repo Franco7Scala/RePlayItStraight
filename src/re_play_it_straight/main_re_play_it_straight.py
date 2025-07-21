@@ -1,7 +1,7 @@
 import random
 import nets
 import torch
-import datasets_ as datasets
+import datasets_
 import methods as methods
 import numpy as np
 import torch.optim as optim
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         args.device = cuda if torch.cuda.is_available() else "cpu"
 
     print("args: ", args)
-    channel, im_size, num_classes, class_names, mean, std, dst_train, dst_u_all, dst_test = dataset.__dict__[args.dataset](args)
+    channel, im_size, num_classes, class_names, mean, std, dst_train, dst_u_all, dst_test = datasets_.__dict__[args.dataset](args)
     args.channel, args.im_size, args.num_classes, args.class_names = channel, im_size, num_classes, class_names
     print("im_size: ", dst_train[0][0].shape)
     # BackgroundGenerator for ImageNet to speed up dataloaders
