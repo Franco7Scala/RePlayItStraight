@@ -15,11 +15,6 @@ from src.re_play_it_straight.support.arguments import parser
 from ptflops import get_model_complexity_info
 
 
-random.seed(0)
-torch.manual_seed(0)
-torch.backends.cudnn.deterministic = True
-
-
 def rs2_training(dst_train, args, network, train_loader, test_loader, boot_epochs, n_split, type="boot", check_accuracy=False):
     splits_for_rs2 = split_dataset_for_rs2(dst_train, args)
     criterion, optimizer, scheduler, rec = get_optim_configurations(args, network, train_loader)
@@ -81,17 +76,23 @@ if __name__ == "__main__":
         args.device = cuda if torch.cuda.is_available() else "cpu"
 
     print("args: ", args)
+    seed_everything(args.seed)
     channel, im_size, num_classes, class_names, mean, std, dst_train, dst_u_all, dst_test = datasets_.__dict__[args.dataset](args)
     args.channel, args.im_size, args.num_classes, args.class_names = channel, im_size, num_classes, class_names
     print("im_size: ", dst_train[0][0].shape)
     # BackgroundGenerator for ImageNet to speed up dataloaders
+    train_lengths = [int(len(dst_train) * 0.80), int(len(dst_train) * 0.20)]
+    subset_train, subset_validation = torch.utils.data.random_split(dst_train, train_lengths)
+
     if args.dataset == "ImageNet" or args.dataset == "ImageNet30":
-        train_loader = DataLoaderX(dst_train, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=False)
-        test_loader = DataLoaderX(dst_test, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
+        train_loader = DataLoaderX(subset_train, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=False)
+        validation_loader = DataLoaderX(subset_validation, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
+        evaluation_loader = DataLoaderX(dst_test, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
 
     else:
-        train_loader = torch.utils.data.DataLoader(dst_train, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=False)
-        test_loader = torch.utils.data.DataLoader(dst_test, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
+        train_loader = torch.utils.data.DataLoader(subset_train, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=False)
+        validation_loader = torch.utils.data.DataLoader(subset_validation, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
+        evaluation_loader = torch.utils.data.DataLoader(dst_test, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
 
     print("| Training on model %s" % args.model)
     tot_backward_steps = 0
@@ -102,7 +103,7 @@ if __name__ == "__main__":
     # RS2 boot training
     print("==================== RS2 boot training ====================")
     print("RS2 split size: {}".format(int(len(dst_train) / args.n_split)))
-    accuracy, precision, recall, f1, steps = rs2_training(dst_train, args, network, train_loader, test_loader, args.boot_epochs, args.n_split)
+    accuracy, precision, recall, f1, steps = rs2_training(dst_train, args, network, train_loader, validation_loader, args.boot_epochs, args.n_split)
     tot_backward_steps += steps
 
     # Active learning cycles
@@ -204,13 +205,13 @@ if __name__ == "__main__":
             clprint(f"Performing n {n_rs2_refresh} boost epoch...", reason=Reason.INFO_TRAINING)
             bkp_lr = args.lr
             args.lr = args.lr * 0.1
-            accuracy, precision, recall, f1, steps = rs2_training(dst_train, args, network, train_loader, test_loader, 10, 10, "boost", check_accuracy=True)
+            accuracy, precision, recall, f1, steps = rs2_training(dst_train, args, network, train_loader, validation_loader, 10, 10, "boost", check_accuracy=True)
             args.lr = bkp_lr
             tot_backward_steps += steps
             n_rs2_refresh += 1
 
         else:
-            accuracy, precision, recall, f1 = test(test_loader, network, criterion, epoch, args, rec)
+            accuracy, precision, recall, f1 = test(validation_loader, network, criterion, epoch, args, rec)
 
         previous_loss = current_loss
         clprint(f"Cycle {cycle} || Label set size {len(labeled_set)} | Accuracy: {accuracy}, Precision: {precision}, Recall: {recall}, F1: {f1}", reason=Reason.OUTPUT_TRAINING)
@@ -221,8 +222,8 @@ if __name__ == "__main__":
         logs_recall.append([recall])
         logs_f1.append([f1])
 
-    print("========== Final logs ==========")
-    print("-"*100)
+    print("========== Pre-Final logs ==========")
+    print("-" * 100)
     print("Backward steps:")
     print(tot_backward_steps, flush=True)
     print("Accuracies:")
@@ -237,4 +238,17 @@ if __name__ == "__main__":
     print("F1s:")
     logs_f1 = np.array(logs_f1).reshape((-1, 1))
     print(logs_f1, flush=True)
+    accuracy, precision, recall, f1 = test(evaluation_loader, network, criterion, epoch, args, rec)
 
+    clprint("========== Final logs ==========", Reason.OUTPUT_TRAINING)
+    clprint("-" * 100, Reason.OUTPUT_TRAINING)
+    clprint("Backward steps:", Reason.OUTPUT_TRAINING)
+    clprint(tot_backward_steps, Reason.OUTPUT_TRAINING)
+    clprint("Accuracy:", Reason.OUTPUT_TRAINING)
+    clprint(accuracy, Reason.OUTPUT_TRAINING)
+    clprint("Precision:", Reason.OUTPUT_TRAINING)
+    clprint(precision, Reason.OUTPUT_TRAINING)
+    clprint("Recall:", Reason.OUTPUT_TRAINING)
+    clprint(recall, Reason.OUTPUT_TRAINING)
+    clprint("F1:", Reason.OUTPUT_TRAINING)
+    clprint(f1, Reason.OUTPUT_TRAINING)
