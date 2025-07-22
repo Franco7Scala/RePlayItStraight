@@ -1,7 +1,7 @@
-ks=() #(250 500 1000 2000 4000)
-epochs=() #(3 5 10 15 20)
-discounts=() #(0.5 1 2 3 4)
-boot_epochs=(3 37)
+ks=(250 500 1000 2000 4000)
+epochs=(3 5 10 15 20)
+discounts=(0.5 1 2 3 4)
+boot_epochs=(3 7 15 25 31 37)
 
 dataset_name="CIFAR10"
 seed=42
