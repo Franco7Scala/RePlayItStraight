@@ -25,3 +25,20 @@ This repository contains the code and resources for the algorithm "Re-Play it St
 * CodeCarbon (2.3.4)
 * Scikit-learn (1.4.1.post1)
 * ptflops (0.7.3)
+
+## Citation
+
+```
+@article{Scala2025,
+  author    = {Francesco Scala and Sergio Flesca and Luigi Pontieri},
+  title     = {An efficient model training framework for green {AI}},
+  journal   = {Machine Learning},
+  year      = {2025},
+  volume    = {114},
+  number    = {12},
+  pages     = {275},
+  issn      = {1573-0565},
+  doi       = {10.1007/s10994-025-06907-w},
+  url       = {https://doi.org/10.1007/s10994-025-06907-w}
+}
+```
